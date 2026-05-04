@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 import json, os, calendar
 
 # ── Página ──────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="💰 Finanças", page_icon="💰", layout="wide",
+st.set_page_config(page_title="Finanças", page_icon="💰", layout="wide",
                    initial_sidebar_state="collapsed")
 
 # ── CSS ─────────────────────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ CATS_D = [
     "🏷️ IPTU","🚘 IPVA","📄 Licenciamento","🎮 Jogos","🎁 Presentes",
     "💊 Saúde","🎓 Educação","🍔 Alimentação","👕 Vestuário","📦 Outros",
 ]
-CATS_R = ["💼 Salário","💰 Freelance","📈 Investimentos","🎁 Presente","📦 Outros"]
+CATS_R = ["💼 Salário","💼 Vale","💼 Férias","💰 Freelance","📈 Investimentos","🎁 Presente","📦 Outros"]
 
 def mes_label(dt): return dt.strftime("%m/%Y")
 def mes_from_label(s):
