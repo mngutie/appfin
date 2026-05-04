@@ -103,7 +103,7 @@ def transacoes_df():
     rows = []
     # lançamentos manuais
     for t in D["transacoes"]:
-        rows.append({**t, "origem":"manual"})
+        rows.append({**t, "origem":"manual", "cartao": ""})
     # contas fixas expandidas
     for cf in D["contas_fixas"]:
         inicio = mes_from_label(cf["mes_inicio"])
@@ -115,14 +115,13 @@ def transacoes_df():
                 "id": f"cf_{cf['id']}_{i}", "tipo":"Despesa",
                 "descricao": cf["descricao"], "valor": cf["valor"],
                 "categoria": cf["categoria"], "data": str(dt),
-                "origem":"fixa", "cf_id": cf["id"]
+                "origem":"fixa", "cf_id": cf["id"], "cartao": ""
             })
     # faturas de cartão
     for fat in D["faturas"]:
         parcelas = int(fat.get("parcelas", 1))
         valor_total = float(fat["valor"])
         if parcelas == 1:
-            # Gasto à vista: usa a data de vencimento baseada no mês de início
             mes_p = mes_from_label(fat["mes_inicio"])
             dia = min(fat["dia_venc"], calendar.monthrange(mes_p.year, mes_p.month)[1])
             dt = date(mes_p.year, mes_p.month, dia)
@@ -134,7 +133,6 @@ def transacoes_df():
                 "cartao": fat.get("cartao","")
             })
         else:
-            # Gasto parcelado
             for p in range(parcelas):
                 mes_p = mes_from_label(fat["mes_inicio"]) + relativedelta(months=p)
                 dia   = min(fat["dia_venc"], calendar.monthrange(mes_p.year, mes_p.month)[1])
@@ -149,12 +147,13 @@ def transacoes_df():
                 })
     
     df = pd.DataFrame(rows) if rows else pd.DataFrame(
-        columns=["id","tipo","descricao","valor","categoria","data","origem"])
+        columns=["id","tipo","descricao","valor","categoria","data","origem", "cartao"])
     
     if not df.empty:
         df["data"] = pd.to_datetime(df["data"])
         df["mes"]  = df["data"].dt.strftime("%m/%Y")
         df["valor"] = pd.to_numeric(df["valor"])
+        if "cartao" not in df.columns: df["cartao"] = ""
     return df
 
 # ── Header ───────────────────────────────────────────────────────────────────
@@ -367,10 +366,13 @@ with tab4:
         st.markdown("### 💳 Cartões cadastrados")
         if D["cartoes"]:
             for c in D["cartoes"]:
-                # Soma todos os gastos de cartão no df_all para o mês atual
-                gastos_mes_atual = df_all[(df_all["origem"] == "cartao") & 
-                                          (df_all["cartao"] == c["nome"]) & 
-                                          (df_all["mes"] == mes_label(hoje))]["valor"].sum()
+                # Filtro robusto para evitar KeyError
+                gastos_mes_atual = 0
+                if not df_all.empty and "cartao" in df_all.columns:
+                    mask = (df_all["origem"] == "cartao") & \
+                           (df_all["cartao"] == c["nome"]) & \
+                           (df_all["mes"] == mes_label(hoje))
+                    gastos_mes_atual = df_all[mask]["valor"].sum()
                 
                 uso = (gastos_mes_atual/c["limite"]*100) if c["limite"]>0 else 0
                 cor_u = "#4ade80" if uso<=70 else "#fbbf24" if uso<=90 else "#f87171"
@@ -445,7 +447,6 @@ with tab5:
         mes_obj  = mes_from_label(mes_cal)
         primeiro, ultimo = mes_obj, mes_obj + relativedelta(months=1) - timedelta(days=1)
 
-        # grid semanal
         semanas = calendar.monthcalendar(mes_obj.year, mes_obj.month)
         dias_semana = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"]
 
@@ -508,7 +509,6 @@ with tab6:
 
     df_proj = pd.DataFrame(rows_proj)
 
-    # Gráfico área
     fig_proj = go.Figure()
     fig_proj.add_trace(go.Scatter(x=df_proj["Mês"], y=df_proj["Saldo Acumulado"],
         mode="lines+markers", name="Saldo Acumulado",
@@ -524,7 +524,6 @@ with tab6:
         legend=dict(orientation="h",y=1.1), margin=dict(t=20,b=10,l=10,r=10))
     st.plotly_chart(fig_proj, use_container_width=True)
 
-    # Tabela resumo
     st.markdown("### Tabela de Projeção")
     df_show = df_proj.copy()
     def fmt(v,positivo=True):
@@ -536,7 +535,6 @@ with tab6:
     df_show["Saldo Acumulado"] = df_show["Saldo Acumulado"].apply(fmt)
     st.write(df_show.to_html(escape=False,index=False,border=0), unsafe_allow_html=True)
 
-    # Alertas projeção
     st.markdown("---")
     st.markdown("### 🔍 Análise")
     meses_neg = [r["Mês"] for r in rows_proj if r["Resultado"] < 0]
