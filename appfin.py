@@ -119,26 +119,42 @@ def transacoes_df():
             })
     # faturas de cartão
     for fat in D["faturas"]:
-        if fat.get("parcelas",1) == 1:
-            rows.append({**fat, "tipo":"Despesa", "origem":"cartao"})
+        parcelas = int(fat.get("parcelas", 1))
+        valor_total = float(fat["valor"])
+        if parcelas == 1:
+            # Gasto à vista: usa a data de vencimento baseada no mês de início
+            mes_p = mes_from_label(fat["mes_inicio"])
+            dia = min(fat["dia_venc"], calendar.monthrange(mes_p.year, mes_p.month)[1])
+            dt = date(mes_p.year, mes_p.month, dia)
+            rows.append({
+                "id": f"fat_{fat['id']}", "tipo":"Despesa",
+                "descricao": fat["descricao"], "valor": valor_total,
+                "categoria": fat.get("categoria","💳 Cartão"),
+                "data": str(dt), "origem":"cartao",
+                "cartao": fat.get("cartao","")
+            })
         else:
-            for p in range(fat["parcelas"]):
+            # Gasto parcelado
+            for p in range(parcelas):
                 mes_p = mes_from_label(fat["mes_inicio"]) + relativedelta(months=p)
                 dia   = min(fat["dia_venc"], calendar.monthrange(mes_p.year, mes_p.month)[1])
                 dt    = date(mes_p.year, mes_p.month, dia)
                 rows.append({
                     "id": f"fat_{fat['id']}_{p}", "tipo":"Despesa",
-                    "descricao": f"{fat['descricao']} ({p+1}/{fat['parcelas']})",
-                    "valor": round(fat["valor"]/fat["parcelas"],2),
+                    "descricao": f"{fat['descricao']} ({p+1}/{parcelas})",
+                    "valor": round(valor_total/parcelas, 2),
                     "categoria": fat.get("categoria","💳 Cartão"),
                     "data": str(dt), "origem":"cartao",
                     "cartao": fat.get("cartao","")
                 })
+    
     df = pd.DataFrame(rows) if rows else pd.DataFrame(
         columns=["id","tipo","descricao","valor","categoria","data","origem"])
+    
     if not df.empty:
         df["data"] = pd.to_datetime(df["data"])
         df["mes"]  = df["data"].dt.strftime("%m/%Y")
+        df["valor"] = pd.to_numeric(df["valor"])
     return df
 
 # ── Header ───────────────────────────────────────────────────────────────────
@@ -188,7 +204,6 @@ tab1,tab2,tab3,tab4,tab5,tab6 = st.tabs([
 # ABA 1 — RESUMO
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab1:
-    # CORREÇÃO AQUI: dropna() e astype(str) evitam o TypeError no sorted()
     meses_disp = sorted(df_all["mes"].dropna().astype(str).unique().tolist(), reverse=True) if not df_all.empty else [mes_label(date.today())]
     mes_sel = st.selectbox("📅 Mês", meses_disp, key="mes_resumo")
 
@@ -352,20 +367,19 @@ with tab4:
         st.markdown("### 💳 Cartões cadastrados")
         if D["cartoes"]:
             for c in D["cartoes"]:
-                # gastos do cartão no mês atual
-                gastos = sum(f["valor"] for f in D["faturas"]
-                             if f.get("cartao_id")==c["id"] and
-                             mes_from_label(f["mes_inicio"]).month==hoje.month and
-                             mes_from_label(f["mes_inicio"]).year==hoje.year
-                             and f.get("parcelas",1)==1)
-                uso = (gastos/c["limite"]*100) if c["limite"]>0 else 0
+                # Soma todos os gastos de cartão no df_all para o mês atual
+                gastos_mes_atual = df_all[(df_all["origem"] == "cartao") & 
+                                          (df_all["cartao"] == c["nome"]) & 
+                                          (df_all["mes"] == mes_label(hoje))]["valor"].sum()
+                
+                uso = (gastos_mes_atual/c["limite"]*100) if c["limite"]>0 else 0
                 cor_u = "#4ade80" if uso<=70 else "#fbbf24" if uso<=90 else "#f87171"
                 st.markdown(f"""<div class="card">
                     <b style="font-family:Syne">{c['nome']}</b><br>
                     <span class="metric-label">Limite: R$ {c['limite']:,.2f} &nbsp;|&nbsp;
                     Fecha dia {c['dia_fech']} &nbsp;|&nbsp; Vence dia {c['dia_venc']}</span>
                     <div style="margin-top:8px;font-size:13px;color:{cor_u}">
-                    Uso este mês: R$ {gastos:,.2f} ({uso:.0f}%)</div>
+                    Uso este mês ({mes_label(hoje)}): R$ {gastos_mes_atual:,.2f} ({uso:.0f}%)</div>
                     <div class="prog-bg"><div class="prog-fill"
                     style="width:{min(uso,100):.0f}%;background:{cor_u}"></div></div>
                     </div>""", unsafe_allow_html=True)
@@ -400,10 +414,10 @@ with tab4:
         if D["faturas"]:
             rows_f = []
             for f in D["faturas"]:
-                fim_f = mes_label(mes_from_label(f["mes_inicio"]) + relativedelta(months=f["parcelas"]-1))
+                fim_f = mes_label(mes_from_label(f["mes_inicio"]) + relativedelta(months=int(f.get("parcelas",1))-1))
                 rows_f.append({"Cartão":f.get("cartao",""),"Descrição":f["descricao"],
                     "Valor Total":f'R$ {f["valor"]:,.2f}',
-                    "Parc.":f'{f["parcelas"]}x R$ {f["valor"]/f["parcelas"]:,.2f}',
+                    "Parc.":f'{f.get("parcelas",1)}x R$ {f["valor"]/int(f.get("parcelas",1)):,.2f}',
                     "Período":f'{f["mes_inicio"]} → {fim_f}'})
             st.write(pd.DataFrame(rows_f).to_html(index=False,border=0),unsafe_allow_html=True)
             with st.expander("🗑️ Excluir gasto"):
