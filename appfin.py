@@ -188,11 +188,12 @@ tab1,tab2,tab3,tab4,tab5,tab6 = st.tabs([
 # ABA 1 — RESUMO
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab1:
-    meses_disp = sorted(df_all["mes"].unique().tolist(), reverse=True) if not df_all.empty else [mes_label(date.today())]
+    # CORREÇÃO AQUI: dropna() e astype(str) evitam o TypeError no sorted()
+    meses_disp = sorted(df_all["mes"].dropna().astype(str).unique().tolist(), reverse=True) if not df_all.empty else [mes_label(date.today())]
     mes_sel = st.selectbox("📅 Mês", meses_disp, key="mes_resumo")
 
     df_m = df_all[df_all["mes"]==mes_sel] if not df_all.empty else pd.DataFrame()
-    rec  = df_m[df_m["tipo"]=="Receita"]["valor"].sum() if not df_m.empty else 0
+    rec   = df_m[df_m["tipo"]=="Receita"]["valor"].sum() if not df_m.empty else 0
     desp = df_m[df_m["tipo"]=="Despesa"]["valor"].sum() if not df_m.empty else 0
     saldo= rec - desp
     meta = D["metas"].get(mes_sel, 0)
@@ -530,8 +531,8 @@ with tab6:
     else:
         st.markdown('<div class="alert-ok">✅ Todos os meses projetados com resultado positivo!</div>', unsafe_allow_html=True)
 
-    melhor = df_proj.loc[df_proj["Resultado"].idxmax()]["Mês"]
-    pior   = df_proj.loc[df_proj["Resultado"].idxmin()]["Mês"]
+    melhor = df_proj.loc[df_proj["Resultado"].idxmax()]["Mês"] if not df_proj.empty else "N/A"
+    pior   = df_proj.loc[df_proj["Resultado"].idxmin()]["Mês"] if not df_proj.empty else "N/A"
     st.markdown(f'<div class="card" style="margin-top:12px">🏆 <b>Melhor mês projetado:</b> {melhor} &nbsp;&nbsp; 📉 <b>Pior mês:</b> {pior}</div>', unsafe_allow_html=True)
 
 st.markdown("<br><p style='text-align:center;color:#2a2a45;font-size:11px'>Minhas Finanças v2 · dados em financas_v2.json</p>", unsafe_allow_html=True)
