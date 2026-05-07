@@ -226,7 +226,7 @@ CATS_D = [
     "🏷️ IPTU","🚘 IPVA","📄 Licenciamento","🎮 Jogos","🎁 Presentes",
     "💊 Saúde","🎓 Educação","🍔 Alimentação","👕 Vestuário","📦 Outros",
 ]
-CATS_R = ["💼 Salário","💰 Freelance","📈 Investimentos","🎁 Presente","📦 Outros"]
+CATS_R = ["💼 Salário","💰 Freelance","💼 13º","📈 Investimentos","💼 Vale","📦 Outros","💼 Férias"]
 
 def mes_label(dt): return dt.strftime("%m/%Y")
 def mes_from_label(s):
