@@ -220,7 +220,7 @@ FORMAS_PAG = ["PIX","Débito","Crédito","Dinheiro","Boleto","TED/DOC","Outros"]
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 CATS_D = [
-    "📺 Assinaturas","🛒 Supermercado","🧴 Cuidados Pessoais","💳 Dívidas",
+    "📺 Assinaturas","🛒 Supermercado","🧴 Cuidados Pessoais","💳 Fatura",
     "📋 Impostos e Taxas","🐾 Pets","✈️ Viagem","🌐 Internet","💧 Água",
     "💡 Luz","📱 Telefonia","🏠 Moradia","🚗 Transporte","⛽ Combustível",
     "🏷️ IPTU","🚘 IPVA","📄 Licenciamento","🎮 Jogos","🎁 Presentes",
