@@ -23,7 +23,7 @@ def data_pt(dt):
     return dt.strftime("%d/%m/%Y")
 
 # ── Página ──────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="💰 Finanças", page_icon="💰", layout="wide",
+st.set_page_config(page_title="Finanças", page_icon="💰", layout="wide",
                    initial_sidebar_state="collapsed")
 
 # ── CSS ─────────────────────────────────────────────────────────────────────
