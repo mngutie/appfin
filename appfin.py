@@ -723,7 +723,7 @@ with tab_rel:
             color = '#38a169' if val == 'Receita' else '#e53e3e'
             return f'color: {color}; font-weight: bold'
 
-        st.dataframe(df_view.style.applymap(color_tipo, subset=['tipo']), use_container_width=True)
+        st.dataframe(df_view.style.map(color_tipo, subset=['tipo']), use_container_width=True)
         
         # Botão de Exportação (Simulado)
         st.download_button(
