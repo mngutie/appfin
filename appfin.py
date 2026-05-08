@@ -23,7 +23,7 @@ def data_pt(dt):
     return dt.strftime("%d/%m/%Y")
 
 # ── Página ──────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="💰 Finanças", page_icon="💰", layout="wide",
+st.set_page_config(page_title="Finanças", page_icon="💰", layout="wide",
                    initial_sidebar_state="collapsed")
 
 # ── CSS ─────────────────────────────────────────────────────────────────────
@@ -295,7 +295,7 @@ def transacoes_df():
 st.markdown(f"""
 <div style='border-bottom:1px solid #1c1f2e;padding-bottom:16px;margin-bottom:20px'>
   <div style='font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#3182ce;font-weight:600;margin-bottom:6px'>GESTÃO FINANCEIRA PESSOAL</div>
-  <div style='font-family:Inter,sans-serif;font-size:1.7rem;font-weight:700;color:#e2e8f0;letter-spacing:-0.5px'>Minhas Finanças</div>
+  <div style='font-family:Inter,sans-serif;font-size:1.7rem;font-weight:700;color:#e2e8f0;letter-spacing:-0.5px'></div>
   <div style='font-size:11px;color:#4a5568;margin-top:4px;font-weight:500;letter-spacing:0.5px'>{dia_semana_pt(datetime.now()).upper()} · {datetime.now().strftime('%d/%m/%Y')} · {datetime.now().strftime('%H:%M')}</div>
 </div>
 """, unsafe_allow_html=True)
